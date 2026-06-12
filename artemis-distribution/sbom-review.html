@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artemis Distribution SBOM Review</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --accent: #3b82f6;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --surface: #f8fafc;
+    --code-bg: #f1f5f9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  h1 + p { color: var(--muted); margin-bottom: 2rem; }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+  }
+  p, ul { margin-bottom: 0.75rem; }
+  ul { padding-left: 1.5rem; }
+  li { margin-bottom: 0.25rem; }
+  code {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75rem 0 1.25rem;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--surface);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  tr:hover td { background: #f8fafc; }
+  .badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15em 0.5em;
+    border-radius: 9999px;
+    vertical-align: middle;
+  }
+  .badge-green { background: #dcfce7; color: var(--green); }
+  .badge-amber { background: #fef3c7; color: var(--amber); }
+  .badge-red { background: #fee2e2; color: var(--red); }
+  .badge-blue { background: #dbeafe; color: var(--accent); }
+  .note {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0 1.25rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .summary-card .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--fg);
+  }
+  .summary-card .label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Artemis Distribution SBOM Review</h1>
+<p>CycloneDX 1.6 &mdash; <code>apache-artemis-2.56.0-SNAPSHOT-bin.zip</code></p>
+
+<!-- ── Workflow ─────────────────────────────────────────────────────── -->
+<h2>SBOM Generation Workflow</h2>
+<p>The distribution SBOM is assembled in four stages across two repositories.
+Each stage builds on the previous one &mdash; npm components from stage&nbsp;1
+propagate through the entire chain via the embedded SBOM merge mechanism.</p>
+
+<svg viewBox="0 0 800 830" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;margin:1.5rem auto;display:block;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,3.5 L0,7z" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,3.5 L0,7z" fill="#3b82f6"/>
+    </marker>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Repo panels -->
+  <rect x="15" y="38" width="770" height="256" rx="14" fill="#f0f9ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="400" y="60" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af" letter-spacing="0.5">artemis-console repository</text>
+
+  <rect x="15" y="314" width="770" height="446" rx="14" fill="#fefce8" stroke="#fde68a" stroke-width="1"/>
+  <text x="400" y="336" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e" letter-spacing="0.5">artemis repository</text>
+
+  <!-- ── Stage 1: npm SBOM ── -->
+  <rect x="140" y="76" width="520" height="66" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="140" y="76" width="5" height="66" rx="2" fill="#3b82f6"/>
+  <circle cx="166" cy="96" r="11" fill="#3b82f6"/>
+  <text x="166" y="100" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">1</text>
+  <text x="184" y="100" font-size="13" font-weight="600" fill="#1a1a2e">npm SBOM Generation</text>
+  <text x="184" y="117" font-size="10.5" fill="#64748b">yarn-plugin-cyclonedx + cdx-npm-enrich --prod-only</text>
+  <text x="184" y="133" font-size="10" fill="#94a3b8">artemis-console-extension / artemis-extension</text>
+
+  <!-- Arrow 1 to 2 -->
+  <line x1="400" y1="142" x2="400" y2="183" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="268" y="149" width="264" height="18" rx="9" fill="#dbeafe"/>
+  <text x="400" y="162" text-anchor="middle" font-size="9" fill="#1e40af">bom.cdx.json &#xb7; 263 npm production deps</text>
+
+  <!-- ── Stage 2: Console WAR SBOM ── -->
+  <rect x="140" y="188" width="520" height="86" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="140" y="188" width="5" height="86" rx="2" fill="#8b5cf6"/>
+  <circle cx="166" cy="208" r="11" fill="#8b5cf6"/>
+  <text x="166" y="212" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">2</text>
+  <text x="184" y="212" font-size="13" font-weight="600" fill="#1a1a2e">Console WAR SBOM</text>
+  <text x="184" y="229" font-size="10.5" fill="#64748b">assembly-sbom-maven-plugin:generate</text>
+  <text x="184" y="246" font-size="10" fill="#94a3b8">artemis-console-war &#x2014; scans exploded WAR, merges npm SBOM via externalSboms</text>
+  <text x="184" y="263" font-size="10" fill="#94a3b8">Output: WAR / META-INF/sbom/bom.cdx.json (Java JARs + npm components)</text>
+
+  <!-- Cross-repo arrow (dashed) -->
+  <line x1="400" y1="274" x2="400" y2="354" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-blue)"/>
+  <rect x="253" y="288" width="294" height="18" rx="9" fill="#ede9fe"/>
+  <text x="400" y="301" text-anchor="middle" font-size="9" fill="#6d28d9">WAR artifact &#x2014; Java JARs + embedded npm SBOM</text>
+
+  <!-- ── Stage 3: Artemis Console WAR SBOM ── -->
+  <rect x="140" y="360" width="520" height="95" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="140" y="360" width="5" height="95" rx="2" fill="#8b5cf6"/>
+  <circle cx="166" cy="380" r="11" fill="#8b5cf6"/>
+  <text x="166" y="384" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">3</text>
+  <text x="184" y="384" font-size="13" font-weight="600" fill="#1a1a2e">Artemis Console WAR SBOM</text>
+  <text x="184" y="401" font-size="10.5" fill="#64748b">assembly-sbom-maven-plugin:generate</text>
+  <text x="184" y="418" font-size="10" fill="#94a3b8">artemis/artemis-console &#x2014; WAR overlay, re-scans with modified JARs</text>
+  <text x="184" y="435" font-size="10" fill="#94a3b8">Discovers &amp; merges embedded SBOM from overlay (npm components carry forward)</text>
+  <text x="184" y="448" font-size="10" fill="#94a3b8">Output: WAR / META-INF/sbom/bom.cdx.json</text>
+
+  <!-- Arrow 3 to 4 -->
+  <line x1="400" y1="455" x2="400" y2="496" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="271" y="462" width="258" height="18" rx="9" fill="#fef3c7"/>
+  <text x="400" y="475" text-anchor="middle" font-size="9" fill="#92400e">WAR unpacked into distribution archive</text>
+
+  <!-- ── Stage 4: Distribution SBOM ── -->
+  <rect x="140" y="502" width="520" height="115" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="140" y="502" width="5" height="115" rx="2" fill="#f59e0b"/>
+  <circle cx="166" cy="522" r="11" fill="#f59e0b"/>
+  <text x="166" y="526" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">4</text>
+  <text x="184" y="526" font-size="13" font-weight="600" fill="#1a1a2e">Distribution SBOM</text>
+  <text x="184" y="543" font-size="10.5" fill="#64748b">assembly-sbom-handler (ContainerDescriptorHandler)</text>
+  <text x="184" y="560" font-size="10" fill="#94a3b8">artemis/artemis-distribution &#x2014; hooks into maven-assembly-plugin</text>
+  <circle cx="168" cy="578" r="2.5" fill="#f59e0b"/>
+  <text x="177" y="582" font-size="9.5" fill="#64748b">Hashes every file, identifies Maven artifacts by content hash</text>
+  <circle cx="168" cy="593" r="2.5" fill="#f59e0b"/>
+  <text x="177" y="597" font-size="9.5" fill="#64748b">Unpacks WAR, merges embedded SBOM, strips META-INF/sbom/</text>
+  <circle cx="168" cy="608" r="2.5" fill="#f59e0b"/>
+  <text x="177" y="612" font-size="9.5" fill="#64748b">Resolves licenses from effective POMs, builds dependency graph</text>
+
+  <!-- Arrow 4 to outputs -->
+  <line x1="400" y1="617" x2="400" y2="654" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ── Outputs ── -->
+  <rect x="140" y="660" width="520" height="82" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text x="165" y="682" font-size="12" font-weight="600" fill="#166534">Outputs</text>
+  <rect x="162" y="692" width="10" height="10" rx="2" fill="#16a34a"/>
+  <text x="178" y="701" font-size="10" fill="#1a1a2e"><tspan font-weight="600">Embedded:</tspan> bom.cdx.json inside .tar.gz / .zip</text>
+  <rect x="162" y="710" width="10" height="10" rx="2" fill="#16a34a"/>
+  <text x="178" y="719" font-size="10" fill="#1a1a2e"><tspan font-weight="600">External:</tspan> *.tar.gz.cdx.json / *.zip.cdx.json</text>
+  <rect x="162" y="728" width="10" height="10" rx="2" fill="#16a34a"/>
+  <text x="178" y="737" font-size="10" fill="#1a1a2e"><tspan font-weight="600">Directory:</tspan> bom.cdx.json (librariesOnly)</text>
+
+  <!-- ── Data Accumulation (right side) ── -->
+  <g transform="translate(682,0)">
+    <text x="40" y="69" text-anchor="middle" font-size="9" font-weight="600" fill="#94a3b8">SBOM content</text>
+    <!-- Stage 1: npm only -->
+    <rect x="20" y="103" width="40" height="10" rx="3" fill="#3b82f6" opacity="0.5"/>
+    <text x="40" y="125" text-anchor="middle" font-size="7.5" fill="#94a3b8">npm</text>
+    <!-- Stage 2: Java + npm -->
+    <rect x="10" y="225" width="30" height="10" rx="3" fill="#8b5cf6" opacity="0.5"/>
+    <rect x="42" y="225" width="30" height="10" rx="3" fill="#3b82f6" opacity="0.5"/>
+    <text x="40" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">Java + npm</text>
+    <!-- Stage 3: Java' + npm -->
+    <rect x="10" y="401" width="30" height="10" rx="3" fill="#8b5cf6" opacity="0.5"/>
+    <rect x="42" y="401" width="30" height="10" rx="3" fill="#3b82f6" opacity="0.5"/>
+    <text x="40" y="424" text-anchor="middle" font-size="7.5" fill="#94a3b8">Java' + npm</text>
+    <!-- Stage 4: broker + Java' + npm -->
+    <rect x="0" y="549" width="26" height="10" rx="3" fill="#f59e0b" opacity="0.5"/>
+    <rect x="28" y="549" width="22" height="10" rx="3" fill="#8b5cf6" opacity="0.5"/>
+    <rect x="52" y="549" width="26" height="10" rx="3" fill="#3b82f6" opacity="0.5"/>
+    <text x="40" y="572" text-anchor="middle" font-size="7.5" fill="#94a3b8">all + Java' + npm</text>
+  </g>
+
+  <!-- ── Legend ── -->
+  <g transform="translate(140,775)">
+    <text x="0" y="0" font-size="10" font-weight="600" fill="#64748b">LEGEND</text>
+    <rect x="0" y="10" width="12" height="12" rx="2" fill="#3b82f6"/>
+    <text x="18" y="20" font-size="9.5" fill="#64748b">npm tooling</text>
+    <rect x="120" y="10" width="12" height="12" rx="2" fill="#8b5cf6"/>
+    <text x="138" y="20" font-size="9.5" fill="#64748b">assembly-sbom-maven-plugin</text>
+    <rect x="330" y="10" width="12" height="12" rx="2" fill="#f59e0b"/>
+    <text x="348" y="20" font-size="9.5" fill="#64748b">assembly-sbom-handler</text>
+    <rect x="500" y="10" width="12" height="12" rx="2" fill="#16a34a"/>
+    <text x="518" y="20" font-size="9.5" fill="#64748b">Final output</text>
+    <line x1="0" y1="36" x2="40" y2="36" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <text x="48" y="40" font-size="9.5" fill="#64748b">Cross-repository artifact flow</text>
+  </g>
+</svg>
+
+<div style="margin:2rem 0 1.5rem;">
+  <div style="display:flex; gap:1rem; margin-bottom:1.25rem; align-items:flex-start;">
+    <div style="flex-shrink:0; width:26px; height:26px; border-radius:50%; background:#3b82f6; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-top:3px;">1</div>
+    <div>
+      <div style="font-weight:600; margin-bottom:0.2rem;">npm SBOM Generation <span style="color:#94a3b8; font-weight:400; font-size:0.85em;">&mdash; artemis-console-extension/artemis-extension</span></div>
+      <p style="font-size:0.9rem; margin:0;">
+        <code>@cyclonedx/yarn-plugin-cyclonedx</code> generates a CycloneDX SBOM from the
+        Yarn workspace with full license resolution from <code>node_modules</code>.
+        <code>@cyberstamp/cdx-npm-enrich --prod-only</code> then strips dev-only
+        dependencies by walking <code>package.json</code> <code>dependencies</code>
+        transitively across all workspaces. Result: <strong>263 production npm
+        components</strong> with licenses in <code>bom.cdx.json</code>.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.25rem; align-items:flex-start;">
+    <div style="flex-shrink:0; width:26px; height:26px; border-radius:50%; background:#8b5cf6; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-top:3px;">2</div>
+    <div>
+      <div style="font-weight:600; margin-bottom:0.2rem;">Console WAR SBOM <span style="color:#94a3b8; font-weight:400; font-size:0.85em;">&mdash; artemis-console-war</span></div>
+      <p style="font-size:0.9rem; margin:0;">
+        <code>maven-war-plugin:exploded</code> builds the exploded WAR with Java JARs
+        (hawtio, jolokia, etc.) and the JS frontend. <code>assembly-sbom-maven-plugin:generate</code>
+        scans the exploded directory, identifies each JAR by content-hash matching against
+        the Maven local repository, and <strong>merges the npm SBOM</strong> from stage&nbsp;1
+        via the <code>&lt;externalSboms&gt;</code> parameter. The combined SBOM is packaged
+        into the WAR at <code>META-INF/sbom/bom.cdx.json</code>.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.25rem; align-items:flex-start;">
+    <div style="flex-shrink:0; width:26px; height:26px; border-radius:50%; background:#8b5cf6; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-top:3px;">3</div>
+    <div>
+      <div style="font-weight:600; margin-bottom:0.2rem;">Artemis Console WAR SBOM <span style="color:#94a3b8; font-weight:400; font-size:0.85em;">&mdash; artemis/artemis-console</span></div>
+      <p style="font-size:0.9rem; margin:0;">
+        This module overlays <code>artemis-console-war</code>, adding Artemis-specific
+        branding and guava, while excluding logging JARs. <code>maven-war-plugin:exploded</code>
+        unpacks the upstream WAR as an overlay &mdash; including its
+        <code>META-INF/sbom/bom.cdx.json</code>. The plugin re-scans the modified contents
+        and <strong>merges the embedded SBOM</strong> it finds inside the overlay. No
+        <code>&lt;externalSboms&gt;</code> is needed: npm components arrive transitively
+        through the embedded SBOM merge. The new SBOM replaces the overlay&rsquo;s at
+        the same <code>META-INF/sbom/</code> path.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:1rem; align-items:flex-start;">
+    <div style="flex-shrink:0; width:26px; height:26px; border-radius:50%; background:#f59e0b; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; margin-top:3px;">4</div>
+    <div>
+      <div style="font-weight:600; margin-bottom:0.2rem;">Distribution SBOM <span style="color:#94a3b8; font-weight:400; font-size:0.85em;">&mdash; artemis/artemis-distribution</span></div>
+      <p style="font-size:0.9rem; margin:0;">
+        A <code>ContainerDescriptorHandler</code> named <code>"sbom"</code> hooks into
+        <code>maven-assembly-plugin</code> during archive creation. It hashes every file
+        being added to the <code>.tar.gz</code> / <code>.zip</code>, identifies Maven
+        artifacts by content hash, and resolves licenses from effective POMs. When the
+        handler encounters the unpacked console WAR, it <strong>merges its embedded
+        SBOM</strong> (carrying all npm components through) and <strong>strips the
+        original <code>META-INF/sbom/</code> files</strong> from the archive via the
+        <code>isSelected</code> filter. The result is a single merged SBOM covering all
+        100+ broker JARs, console Java libraries, and npm components.
+      </p>
+    </div>
+  </div>
+</div>
+
+<h3>Tools</h3>
+<table>
+  <thead><tr><th>Tool</th><th>Role</th><th>Where used</th></tr></thead>
+  <tbody>
+    <tr><td><code>@cyclonedx/yarn-plugin-cyclonedx</code></td><td>Official CycloneDX Yarn plugin: generates SBOM from Yarn workspace dependencies with license resolution from <code>node_modules</code></td><td>artemis-console-extension (via <code>yarn dlx</code>)</td></tr>
+    <tr><td><code>@cyberstamp/cdx-npm-enrich</code></td><td>Strips dev-only npm components (<code>--prod-only</code>) and enriches missing licenses from <code>node_modules</code></td><td>artemis-console-extension (via <code>yarn dlx</code>)</td></tr>
+    <tr><td><code>assembly-sbom-maven-plugin</code></td><td>Maven plugin with <code>generate</code> goal: creates a SBOM for a WAR module and merges external SBOMs</td><td>artemis-console-war, artemis/artemis-console</td></tr>
+    <tr><td><code>assembly-sbom-handler</code></td><td><code>ContainerDescriptorHandler</code> for Maven Assembly Plugin: content-hash identification, unpacked archive detection, embedded SBOM merging, license resolution, dependency graph</td><td>artemis-distribution</td></tr>
+    <tr><td><code>yarn licenses generate-disclaimer</code></td><td>Generates <code>NPMLicenses.txt</code> with full license texts for all npm dependencies (run manually)</td><td>artemis-console-extension</td></tr>
+  </tbody>
+</table>
+
+<!-- ── Overview ────────────────────────────────────────────────────── -->
+<h2>SBOM Overview</h2>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">136</div><div class="label">Top-level components</div></div>
+  <div class="summary-card"><div class="value">354</div><div class="label">Nested components</div></div>
+  <div class="summary-card"><div class="value">409</div><div class="label">Libraries</div></div>
+  <div class="summary-card"><div class="value">81</div><div class="label">Files</div></div>
+  <div class="summary-card"><div class="value">490</div><div class="label">Total components</div></div>
+  <div class="summary-card"><div class="value">491</div><div class="label">Dependency entries</div></div>
+</div>
+
+<table>
+  <thead><tr><th>Metric</th><th>Full SBOM</th><th>LibrariesOnly SBOM</th></tr></thead>
+  <tbody>
+    <tr><td>Top-level components</td><td>136</td><td>114</td></tr>
+    <tr><td>Nested components</td><td>354</td><td>295</td></tr>
+    <tr><td>Libraries</td><td>409 (114 top-level)</td><td>409 (114 top-level)</td></tr>
+    <tr><td>Files</td><td>81 (22 top-level)</td><td>0</td></tr>
+    <tr><td>License coverage</td><td><span class="badge badge-green">100%</span> 409/409</td><td><span class="badge badge-green">100%</span> 409/409</td></tr>
+    <tr><td>PURL coverage</td><td><span class="badge badge-green">100%</span> 409/409</td><td><span class="badge badge-green">100%</span> 409/409</td></tr>
+    <tr><td>Hash coverage</td><td><span class="badge badge-amber">97.6%</span> 478/490</td><td><span class="badge badge-amber">97.1%</span> 397/409</td></tr>
+    <tr><td>Evidence identity</td><td><span class="badge badge-green">83.5%</span> 409/490</td><td><span class="badge badge-green">100%</span> 409/409</td></tr>
+    <tr><td>Evidence occurrences</td><td><span class="badge badge-blue">43.9%</span> 215/490</td><td><span class="badge badge-blue">32.8%</span> 134/409</td></tr>
+    <tr><td>Dependency entries</td><td>491</td><td>410</td></tr>
+    <tr><td>Orphan dep entries</td><td><span class="badge badge-green">0</span></td><td><span class="badge badge-green">0</span></td></tr>
+    <tr><td>Dangling dependsOn refs</td><td><span class="badge badge-green">0</span></td><td><span class="badge badge-green">0</span></td></tr>
+    <tr><td>Duplicate bom-refs</td><td><span class="badge badge-green">0</span></td><td><span class="badge badge-green">0</span></td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  The <code>librariesOnly</code> SBOM correctly preserves all 409 library
+  components while removing all 81 file components. The dependency graph is clean
+  in both variants &mdash; zero orphan entries, zero dangling references.<br><br>
+  The npm SBOM is generated by <code>@cyclonedx/yarn-plugin-cyclonedx</code> and
+  enriched by <code>@cyberstamp/cdx-npm-enrich</code>. The yarn plugin produces a
+  complete dependency graph (no missing entries) and resolves licenses for all
+  components. The enrichment tool adds SHA-512 hashes from <code>yarn.lock</code>,
+  strips dev-only components, and adds <code>evidence.identity</code>
+  (<code>manifest-analysis</code> / <code>package-json-analysis</code>) for each
+  production component. Combined with the handler&rsquo;s Maven identity evidence,
+  all 409 library components have identity evidence &mdash; only the 81 file
+  components lack it.<br><br>
+  12 nested libraries lack hashes &mdash; these are shaded/embedded Maven JARs
+  (e.g., <code>jcip-annotations</code> inside <code>nimbus-jose-jwt</code>,
+  <code>jctools-core</code> inside <code>netty-common</code>) identified via POM
+  analysis rather than content hash.<br><br>
+  275 components lack <code>evidence.occurrences</code> (file-path locations):
+  263 npm packages bundled by webpack into combined JS chunks plus the 12
+  shaded JARs above. Neither category exists as standalone files in the archive.
+</div>
+
+<!-- ── Maven Multi-Version ─────────────────────────────────────────── -->
+<h2>Maven Multi-Version Artifacts</h2>
+<p>The following Maven artifacts appear in the distribution at multiple versions. The
+older version typically comes from a bundled WAR (the console) while the newer version
+is a direct Artemis dependency.</p>
+
+<table>
+  <thead><tr><th>Group</th><th>Artifact</th><th>Versions</th><th>Locations</th></tr></thead>
+  <tbody>
+    <tr><td>com.github.ben-manes.caffeine</td><td>caffeine</td><td>3.2.3, 3.2.4</td><td><code>WEB-INF/lib/</code> (3.2.3), <code>lib/</code> (3.2.4)</td></tr>
+    <tr><td>com.google.guava</td><td>failureaccess</td><td>1.0.1, 1.0.3</td><td>nested (1.0.1), <code>lib/</code> (1.0.3)</td></tr>
+    <tr><td>com.nimbusds</td><td>nimbus-jose-jwt</td><td>10.6, 10.9.1</td><td><code>WEB-INF/lib/</code> (10.6), <code>lib/</code> (10.9.1)</td></tr>
+    <tr><td>commons-io</td><td>commons-io</td><td>2.20.0, 2.22.0</td><td><code>WEB-INF/lib/</code> (2.20.0), <code>lib/</code> (2.22.0)</td></tr>
+    <tr><td>commons-logging</td><td>commons-logging</td><td>1.3.5, 1.4.0</td><td><code>WEB-INF/lib/</code> (1.3.5), <code>lib/</code> (1.4.0)</td></tr>
+    <tr><td>org.jctools</td><td>jctools-core</td><td>4.0.5, 4.0.6</td><td>nested (4.0.5), <code>lib/</code> (4.0.6)</td></tr>
+  </tbody>
+</table>
+
+<!-- ── npm Multi-Version ───────────────────────────────────────────── -->
+<h2>npm Multi-Version Packages</h2>
+<p>Multiple versions of the same npm package bundled inside the console WAR.</p>
+
+<table>
+  <thead><tr><th>Package</th><th>Versions</th></tr></thead>
+  <tbody>
+    <tr><td>@types/d3-force</td><td>1.2.7, 3.0.10</td></tr>
+    <tr><td>@types/unist</td><td>2.0.11, 3.0.3</td></tr>
+    <tr><td>d3-dispatch</td><td>1.0.6, 3.0.1</td></tr>
+    <tr><td>d3-drag</td><td>1.2.5, 3.0.0</td></tr>
+    <tr><td>d3-path</td><td>1.0.9, 3.1.0</td></tr>
+    <tr><td>d3-selection</td><td>1.4.2, 3.0.0</td></tr>
+    <tr><td>d3-shape</td><td>1.3.7, 3.2.0</td></tr>
+    <tr><td>d3-timer</td><td>1.0.10, 3.0.1</td></tr>
+    <tr><td>delaunator</td><td>4.0.1, 5.0.1</td></tr>
+    <tr><td>file-selector</td><td>0.6.0, 2.1.2</td></tr>
+    <tr><td>jolokia.js</td><td>2.4.2, 2.5.0</td></tr>
+    <tr><td>react-dropzone</td><td>14.2.3, 14.3.8</td></tr>
+  </tbody>
+</table>
+
+<!-- ── LICENSE File vs SBOM ─────────────────────────────────────────── -->
+<h2>LICENSE File vs SBOM Comparison (Maven)</h2>
+<p>Comparison of the hand-maintained <code>LICENSE</code> file against SBOM license metadata.</p>
+
+<h3>Entries that match</h3>
+<table>
+  <thead><tr><th>Component</th><th>LICENSE file</th><th>SBOM</th></tr></thead>
+  <tbody>
+    <tr><td>org.slf4j/slf4j-api</td><td>MIT</td><td>MIT</td></tr>
+    <tr><td>jakarta.activation/jakarta.activation-api</td><td>EDL-1.0</td><td>BSD-3-Clause</td></tr>
+    <tr><td>jakarta.jms/jakarta.jms-api</td><td>EPL-2.0</td><td>EPL-2.0, GPL-2.0-with-classpath-exception</td></tr>
+    <tr><td>jakarta.json/jakarta.json-api</td><td>EPL-2.0</td><td>EPL-2.0, GPL-2.0-with-classpath-exception</td></tr>
+    <tr><td>jakarta.security.auth.message-api</td><td>EPL-2.0</td><td>EPL-2.0, GPL-2.0-with-classpath-exception</td></tr>
+    <tr><td>jakarta.transaction/jakarta.transaction-api</td><td>EPL-2.0</td><td>EPL-2.0, GPL-2.0-with-classpath-exception</td></tr>
+    <tr><td>jakarta.xml.bind/jakarta.xml.bind-api</td><td>EDL-1.0</td><td>BSD-3-Clause</td></tr>
+    <tr><td>org.hdrhistogram/HdrHistogram</td><td>BSD-2-Clause</td><td>CC0-1.0, BSD-2-Clause</td></tr>
+    <tr><td>org.jline/* (7 modules)</td><td>BSD-3-Clause</td><td>BSD-3-Clause</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  EDL-1.0 is functionally equivalent to BSD-3-Clause. The Jakarta APIs carry dual
+  EPL-2.0 / GPL-2.0-with-classpath-exception licensing; the LICENSE file lists only
+  EPL-2.0. HdrHistogram is dual-licensed CC0-1.0 and BSD-2-Clause; the LICENSE file
+  lists only BSD.
+</div>
+
+<h3>Discrepancies</h3>
+<table>
+  <thead><tr><th>Component</th><th>LICENSE file</th><th>SBOM</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>picocli-shell-jline3</td>
+      <td>BSD-3-Clause (grouped under JLine)</td>
+      <td><span class="badge badge-amber">Apache-2.0</span></td>
+      <td>picocli is Apache-2.0, not BSD</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>LICENSE file entries not found in SBOM</h3>
+<table>
+  <thead><tr><th>Component</th><th>LICENSE file license</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>json (org.json)</td><td>Public Domain</td><td><span class="badge badge-blue">Not in archive</span></td></tr>
+    <tr><td>checker-qual</td><td>MIT</td><td><span class="badge badge-blue">Not in archive</span></td></tr>
+  </tbody>
+</table>
+
+<h3>Non-Apache SBOM libraries missing from LICENSE file</h3>
+<p>These components carry non-Apache licenses but are not listed in the <code>LICENSE</code> file.</p>
+
+<table>
+  <thead><tr><th>Component</th><th>Version</th><th>SBOM License</th></tr></thead>
+  <tbody>
+    <tr><td>com.sun.istack/istack-commons-runtime</td><td>3.0.12</td><td><span class="badge badge-red">BSD-3-Clause</span></td></tr>
+    <tr><td>com.sun.xml.bind/jaxb-impl</td><td>2.3.9</td><td><span class="badge badge-red">BSD-3-Clause</span></td></tr>
+    <tr><td>de.dentrassi.crypto/pem-keystore</td><td>3.0.0</td><td><span class="badge badge-red">EPL-1.0</span></td></tr>
+    <tr><td>org.eclipse.jetty/* (21 modules)</td><td>12.1.11</td><td><span class="badge badge-red">EPL-2.0, Apache-2.0</span></td></tr>
+    <tr><td>org.eclipse.jetty.toolchain/jetty-jakarta-servlet-api</td><td>5.0.2</td><td><span class="badge badge-red">Apache-2.0, EPL-1.0</span></td></tr>
+    <tr><td>org.glassfish.jaxb/jaxb-runtime</td><td>2.3.9</td><td><span class="badge badge-red">BSD-3-Clause</span></td></tr>
+    <tr><td>org.glassfish.jaxb/txw2</td><td>2.3.9</td><td><span class="badge badge-red">BSD-3-Clause</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ── NPMLicenses.txt vs SBOM ─────────────────────────────────────── -->
+<h2>NPMLicenses.txt vs SBOM Comparison</h2>
+<p><code>NPMLicenses.txt</code> is generated by <code>yarn licenses generate-disclaimer</code>
+and covers all dependencies (dev + prod, ~871 entries). The SBOM contains 263
+production-only npm components.</p>
+
+<h3>SBOM components not in NPMLicenses.txt (36)</h3>
+<p>These production dependencies are missing from the generated license file.</p>
+
+<table>
+  <thead><tr><th>Package</th><th>Version</th><th>SBOM License</th></tr></thead>
+  <tbody>
+    <tr><td>@babel/runtime</td><td>7.28.4</td><td>MIT</td></tr>
+    <tr><td>@jolokia.js/simple</td><td>2.4.2</td><td>Apache-2.0</td></tr>
+    <tr><td>@module-federation/sdk</td><td>2.0.0</td><td>MIT</td></tr>
+    <tr><td>@module-federation/utilities</td><td>3.1.83</td><td>MIT</td></tr>
+    <tr><td>@monaco-editor/loader</td><td>1.5.0</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-charts</td><td>7.4.9</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-code-editor</td><td>5.4.18</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-core</td><td>5.4.14</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-icons</td><td>5.4.2</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-styles</td><td>5.4.1</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-table</td><td>5.4.16</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-tokens</td><td>5.4.1</td><td>MIT</td></tr>
+    <tr><td>@patternfly/react-topology</td><td>5.4.1</td><td>MIT</td></tr>
+    <tr><td>@reactflow/background</td><td>11.3.14</td><td>MIT</td></tr>
+    <tr><td>@reactflow/controls</td><td>11.2.14</td><td>MIT</td></tr>
+    <tr><td>@reactflow/core</td><td>11.11.4</td><td>MIT</td></tr>
+    <tr><td>@reactflow/minimap</td><td>11.7.14</td><td>MIT</td></tr>
+    <tr><td>@reactflow/node-resizer</td><td>2.2.14</td><td>MIT</td></tr>
+    <tr><td>@reactflow/node-toolbar</td><td>1.3.14</td><td>MIT</td></tr>
+    <tr><td>@thumbmarkjs/thumbmarkjs</td><td>1.7.1</td><td>MIT</td></tr>
+    <tr><td>@types/estree</td><td>1.0.8</td><td>MIT</td></tr>
+    <tr><td>@types/estree-jsx</td><td>1.0.5</td><td>MIT</td></tr>
+    <tr><td>@types/geojson</td><td>7946.0.16</td><td>MIT</td></tr>
+    <tr><td>@types/hast</td><td>3.0.4</td><td>MIT</td></tr>
+    <tr><td>@types/mdast</td><td>4.0.4</td><td>MIT</td></tr>
+    <tr><td>@types/unist</td><td>2.0.11, 3.0.3</td><td>MIT</td></tr>
+    <tr><td>@ungap/structured-clone</td><td>1.3.0</td><td>ISC</td></tr>
+    <tr><td>jolokia.js</td><td>2.4.2, 2.5.0</td><td>Apache-2.0</td></tr>
+    <tr><td>js-logger</td><td>1.6.1</td><td>MIT</td></tr>
+    <tr><td>point-in-svg-path</td><td>1.0.2</td><td>ISC</td></tr>
+    <tr><td>popper.js</td><td>1.16.1</td><td>MIT</td></tr>
+    <tr><td>reactflow</td><td>11.11.4</td><td>MIT</td></tr>
+    <tr><td>split.js</td><td>1.6.5</td><td>MIT</td></tr>
+    <tr><td>victory-vendor</td><td>37.3.6</td><td>MIT, ISC</td></tr>
+  </tbody>
+</table>
+
+<h3>Notable license discrepancies</h3>
+<table>
+  <thead><tr><th>Package</th><th>NPMLicenses.txt</th><th>SBOM</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>@hawtio/react</td>
+      <td>MIT</td>
+      <td><span class="badge badge-amber">Apache-2.0</span></td>
+      <td>SBOM reads from package.json which declares Apache-2.0</td>
+    </tr>
+    <tr>
+      <td>tslib</td>
+      <td>ISC</td>
+      <td><span class="badge badge-amber">0BSD</span></td>
+      <td>0BSD is the current license; ISC was historical</td>
+    </tr>
+    <tr>
+      <td>d3-scale-chromatic</td>
+      <td>Apache-2.0</td>
+      <td><span class="badge badge-amber">ISC</span></td>
+      <td>SBOM reads ISC from package.json</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  Most d3-* packages show as <em>unknown</em> in NPMLicenses.txt due to non-standard
+  license headers that <code>yarn licenses generate-disclaimer</code> fails to parse.
+  The SBOM correctly identifies them as ISC or BSD-3-Clause from their
+  <code>package.json</code> files.
+</div>
+
+</body>
+</html>

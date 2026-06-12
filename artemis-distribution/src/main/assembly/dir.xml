@@ -25,6 +25,16 @@
    </formats>
    <includeBaseDirectory>true</includeBaseDirectory>
 
+   <containerDescriptorHandlers>
+      <containerDescriptorHandler>
+         <handlerName>sbom</handlerName>
+         <configuration>
+             <prettyPrint>true</prettyPrint>
+             <librariesOnly>true</librariesOnly>
+         </configuration>
+      </containerDescriptorHandler>
+   </containerDescriptorHandlers>
+
    <componentDescriptors>
        <componentDescriptor>dep.xml</componentDescriptor>
    </componentDescriptors>
